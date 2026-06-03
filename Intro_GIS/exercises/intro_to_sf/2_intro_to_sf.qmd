@@ -1,5 +1,6 @@
 ---
-title: "Working with Vector Data, Part 2"
+title: "Introduction to GIS and Mapping in R"
+subtitle: "Working with Vector Data, Part 1"
 date: today
 author: "Roger Andre"
 fig-cap-location: top

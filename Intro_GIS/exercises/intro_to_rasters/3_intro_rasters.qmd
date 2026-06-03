@@ -1,6 +1,6 @@
 ---
-title: "Mapping Raster and Vector Data, Part 1"
-subtitle: "Introduction to Rasters"
+title: "Introduction to GIS and Mapping in R"
+subtitle: "Working with Rasters"
 date: today
 author: "Brittany Barker"
 fig-cap-location: top
@@ -768,7 +768,6 @@ Parts of these exercises were modified from a tutorial for the
 [`rnpn`](https://cran.r-project.org/web/packages/rnpn/index.html)
 package created by Alyssa Rosemartin. Raster and observation data were
 downloaded from the USA National Phenology Network's servers using
-`rnpn`. This work was funded by the USDA National Institute of Food and
-Agriculture (NIFA) Agriculture and Food Research Initiative program
-(grant no. 2022-68013-37138) and USDA NIFA Crop and Pest Management
-(CPPM) program (grant no. 2024-70006-43503).
+`rnpn`. Development of this workshop was supported by the USDA National 
+Institute of Food and Agriculture (NIFA) Agriculture and Food Research Initiative program (#2022-68013-37138) and USDA NIFA Crop and Pest Management program 
+(#2024-70006-43503).
