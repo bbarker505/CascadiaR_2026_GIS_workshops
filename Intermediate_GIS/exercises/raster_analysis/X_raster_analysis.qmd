@@ -1,0 +1,151 @@
+---
+title: "Intermediate GIS and Mapping in R"
+subtitle: "Raster analysis"
+date: today
+author: "Brittany Barker"
+fig-cap-location: top
+format:
+  html:
+    page-layout: full
+    code-fold: show
+    theme: flatly
+    embed-resources: true
+execute:
+  enabled: true
+  echo: false
+---
+
+## __Load packages__
+
+```{r, warning = FALSE, message = FALSE, echo=TRUE}
+library(here) # Easier relative paths
+library(dplyr) # Data wrangling
+library(lubridate) # Working with dates
+library(ggplot2) # Plotting model outputs
+library(ggthemes) # ggthemes_data function
+library(patchwork) # Combine plots
+library(viridis) # Color palettes for ggplot2
+library(knitr) # Including graphics
+library(sf) # Working with spatial features
+library(terra) # Working with rasters
+library(tidyterra) # Tidyverse function for SpatRaster objects
+#library(USAboundaries) # USA boundary features
+# issues w/ installing "USAboundaries" so run this code
+#devtools::install_github("ropensci/USAboundaries")
+```
+
+## __Overview__
+
+Combine the [`terra`](https://rspatial.org/pkg/index.html),
+[`sf`](https://r-spatial.github.io/sf/), and
+[`ggplot2`](https://ggplot2.tidyverse.org/) packages to work with
+geospatial data and create beautiful maps.
+
+### __Learning objectives__
+
+-   Plot and analyze spatial data to address a research question
+-   Apply different mapping functions in `terra`, `sf`, and `ggplot2`
+-   Describe the difference between vector and raster features
+-   Describe the influence of a coordinate reference system (CRS) on
+    mapping
+-   Adjust `ggplot2` settings to customize maps
+
+## __Mapping predicted vs. observed dates of lilac phenophases__
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("images", "NPN_phenophase.jpg"))
+```
+
+In the following exercises, we will visualize spatial concordance
+between model-predicted and observed dates of lilac leaf out, which is a
+phenophase of lilac in which new leaves appear. A **phenophase** is an
+observable stage of an animal's or plant's life cycle that can be
+defined by a start and end point. All data were derived from the [USA
+National Phenology
+Network](https://www.usanpn.org/usa-national-phenology-network), an
+organization that hosts phenology models and maintains a database of
+volunteer-contributed observations of phenology for ecologically and
+economically important species of plants and insects in the USA.
+
+------------------------------------
+
+## __Exercise 1: Mapping predicted lilac leaf out__
+
+We import raster data for model predictions of lilac leaf out for 2018
+using the `rast()` function in `terra`.
+
+```{r, echo=TRUE, warnings=FALSE}
+lilacModel_r <- rast(here("data", "lilac_2018_model.tiff"))
+```
+
+Check out attributes of the raster, such as it's class, coordinate
+reference system (crs), class, extent, and range of values correspond to
+the day in which lilac leaf out was predicted to occur in `2018`.
+
+```{r, echo=TRUE, warnings=FALSE}
+class(lilacModel_r)
+lilacModel_r
+```
+
+------------------------------------
+
+## __Exercise 3: Extract and analyze raster data__
+
+There are numerous functions in `terra` for extracting, manipulating,
+and analyzing raster data. Here, we'll use the `extract` function to
+extract model predictions (predicted day of year) from the precise
+location where lilac observations were collected (observed day of year).
+This allows us to further compare the two datasets.
+
+Extract the predictions, convert results to a data frame, and rename the
+data column from `layer` to `leaf_doy`.
+
+```{r, echo=TRUE, warnings=FALSE}
+# Extract model predictions for each observation location
+lilacObs_extr <- extract(lilacModel_r, lilacObs_sf) %>%
+  as.data.frame() %>%
+  rename("leaf_doy" = "layer") %>%
+  as.data.frame() 
+```
+
+Next, we can estimate the extent to which the model under-predicts vs.
+over-predicts the date of lilac leaf out by subtracting the
+`leaf_doy` columns.
+
+```{r, echo=TRUE, warnings=FALSE}
+# Differences (in days) between predicted and observed lilac leaf out
+differences <- lilacObs_extr$leaf_doy- lilacObs_sf$leaf_doy
+```
+
+Create a histogram of differences using the `hist()` function in base
+`R.`
+
+```{r, echo=TRUE, warnings=FALSE}
+hist(differences, breaks = seq(-250, 50, 25))
+```
+
+Now calculate some simple summary statistics of the differences.
+
+```{r, echo=TRUE, warnings=FALSE}
+# Mean
+mean(differences)
+# Range
+range(differences)
+# Median
+median(differences)
+```
+
+------------------------------------
+
+__Question X.__ What information do your simple
+analyses provide that can't be seen on a map? Overall, what do the
+results say about the performance of the model for lilac leaf out?
+
+Answer: On average, predicted dates were 13.71 days earlier (range =
+-237 to 48 days) than observed dates, which suggests that the model is
+under-predicting the date of lilac leaf out. However, the extreme
+outliers are likely due to observer error, as we noted above. The model
+actually seems to perform pretty well if we reduce the impact of
+outliers by calculating the median difference, which is only 1 day.
+
+------------------------------------

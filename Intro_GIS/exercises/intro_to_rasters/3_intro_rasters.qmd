@@ -645,61 +645,6 @@ Note: Other options for combining plots include functions in the
 [`cowplot`](https://cran.r-project.org/web/packages/cowplot/vignettes/introduction.html)
 \[`plot_grid()`\] packages.
 
-------------------------------------
-
-## __Exercise 3: Extract and analyze raster data__
-
-There are numerous functions in `terra` for extracting, manipulating,
-and analyzing raster data. Here, we'll use the `extract` function to
-extract model predictions (predicted day of year) from the precise
-location where lilac observations were collected (observed day of year).
-This allows us to further compare the two datasets.
-
-Extract the predictions, convert results to a data frame, and rename the
-data column from `layer` to `leaf_doy`.
-
-```{r, echo=TRUE, warnings=FALSE}
-# Extract model predictions for each observation location
-
-```
-
-Next, we can estimate the extent to which the model under-predicts vs.
-over-predicts the date of lilac leaf out by subtracting the
-`leaf_doy` columns.
-
-```{r, echo=TRUE, warnings=FALSE}
-# Differences (in days) between predicted and observed lilac leaf out
-
-```
-
-Create a histogram of differences using the `hist()` function in base
-`R.`
-
-```{r, echo=TRUE, warnings=FALSE}
-# hist(differences, breaks = seq(-250, 50, 25))
-```
-
-Now calculate some simple summary statistics of the differences.
-
-```{r, echo=TRUE, warnings=FALSE}
-# Mean
-
-# Range
-
-# Median
-
-```
-
-------------------------------------
-
-__Question 6.__ What information do your simple
-analyses provide that can't be seen on a map? Overall, what do the
-results say about the performance of the model for lilac leaf out?
-
-Answer: 
-
-------------------------------------
-
 ## __Wrap-up__
 
 These exercises only scratched the surface of mapping in R! Here's a
