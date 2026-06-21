@@ -1,5 +1,5 @@
 ---
-title: "Mapping Raster and Vector Data, Part 2"
+title: "Intermediate GIS and Mapping in R"
 subtitle: "Introduction to Leaflet"
 date: today
 author: "Brittany Barker"
@@ -13,6 +13,9 @@ format:
 execute:
   enabled: true
   echo: false
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{css}
@@ -22,7 +25,7 @@ text-align: center;
 }
 ```
 
-### **Load packages**
+## **Load packages**
 
 ```{r, warning = FALSE, message = FALSE, echo=TRUE}
 library(here) # Project relative paths
@@ -30,25 +33,26 @@ library(dplyr) # Data wrangling
 library(sf) # Working with spatial features
 library(terra) # Working with rasters
 library(ggplot2) # For binning data
-library(ggthemes) # # ggthemes_data function
 library(leaflet) # Creating an interactive map
 library(leafem) # Addition Leaflet map features
 library(htmltools) # Adding a title to map
 ```
 
-### **Overview**
+## **Overview**
 
-In the previous workshop activity (part 3), we used `ggplot2` to create
-*static* maps of predicted vs. observed dates of lilac leaf out for
-2018. This time, we will use `leaflet` to make our map *interactive*.
-For example, we will add capabilities to zoom, pan, and query the map.
+In the previous workshop, we used `ggplot2` to create *static* maps of
+predicted vs. observed dates of lilac leaf out for 2018. This time, we
+will use `leaflet` to make our map *interactive*. For example, we will
+add capabilities to zoom, pan, and query the map.
 
-### **Learning objectives**
+## **Learning objectives**
 
 -   Gain additional practice with spatial operations in R\
--   Create an interactive map in R using the `leaflet` package
+-   Create an interactive map in R using the `leaflet` package\
+-   Understand situations where an interactive map may be preferable to
+    static map and vice versa
 
-### **Introduction**
+## **Introduction**
 
 Leaflet is an [open-source](https://github.com/Leaflet/Leaflet)
 JavaScript library for making interactive web maps. After creating a map
@@ -60,6 +64,8 @@ to create a Leaflet map in R. The package includes powerful and
 convenient features for integrating with [Shiny
 applications](https://rstudio.github.io/leaflet/articles/shiny.html),
 allowing you to create interactive online maps.
+
+## **Make the leaflet map**
 
 ### **Creating a basic leaflet map**
 
@@ -103,45 +109,34 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
   addProviderTiles("OpenStreetMap")
 ```
 
-Test out using different options and/or map tiles in the code chunk
-below.
-
-```{r, echo=TRUE, warnings=FALSE}
-
-```
-
-------------------------------------------------------------------------
-
-### **Interactive mapping of lilac leaf out data**
-
-NOTE: Use code from part 3 of the workshop to complete this section.
-
-#### **Import and format data**
+### **Import and format data**
 
 First, import the raster data for model predictions of lilac leaf out
-for 2018 (raster data: `lilac_2018.tiff`).
+for 2018 (raster data: `lilac_2018.tiff`) using the `rast()` function in
+`terra`. Name the raster `lilacModel_r` and round it to the `0` decimal
+place because the data are days of the year (no decimals).
 
 ```{r, echo=TRUE, warnings=FALSE}
 # Raster data: model predictions for lilac leaf out
 # Use the 'rast()' function to import the raster
 lilacModel_r <- rast(here("data", "lilac_2018_model.tiff"))
+
+# Round values down because these are days of the year 
+lilacModel_r <- round(lilacModel_r, 0)
 ```
 
 Next, import phenometric data for observed lilac leaf out dates for 2018
 using `st_read()`. We converted the for formatted data to a shapefile in
-the previous exercise. Turn off the "s2" before importing. Take a look
-at the object.
+the previous exercise. Name the object `lilacObs_sf`.
 
 ```{r, echo=TRUE, warnings=FALSE}
-# Switch off "s2"
-sf_use_s2(FALSE)
-
 # Phenometric data (shapefile produced in previous exercise)
 lilacObs_sf <- st_read(here("data", "lilac_2018_obs.shp"))
 ```
 
 Finally, import the state boundary data (`states.shp`) and crop it to
-the same extent as the raster.
+the same extent as the raster using `st_crop()`. Name the object
+`states`.
 
 ```{r, echo=TRUE, warnings=FALSE}
 # US states feature
@@ -163,9 +158,11 @@ factors_df <- data.frame(
   leaf_doy = 1:365, 
   leaf_month = ggplot2::cut_interval(1:365, 12)) %>%
   # Bin dates by month and re-format labels to remove brackets, parentheses, etc.
-  mutate(leaf_month = format(as.Date(
-    leaf_doy, origin = "2018-01-01"), "%b"),
-    leaf_month = gsub("\\(|\\]|\\[", "", leaf_month)) %>%
+  mutate(leaf_month = format(
+    as.Date(
+      leaf_doy - 1, origin = "2018-01-01"), "%b"),
+      leaf_month = gsub("\\(|\\]|\\[", "", leaf_month)
+    ) %>%
   mutate(leaf_month = gsub(",", "-", leaf_month))
 
 # Convert month to a factor so they're in the right order on plots
@@ -181,7 +178,7 @@ levels.
 
 ```{r, echo=TRUE, warnings=FALSE}
 # Define factor levels for the raster
-lilacModel_r <- lilacModel_r
+lilacModel_r <- as.factor(lilacModel_r)
 levels(lilacModel_r) <- factors_df
 
 # Define factor levels for the observations (sf object)
@@ -228,14 +225,15 @@ palPts <- colorFactor(
 
 ------------------------------------------------------------------------
 
-#### **Create the leaflet map**
+### **Add basemap and raster data**
 
 Raster data are displayed on a leaflet map using
-[`addRasterImage()`](https://www.rdocumentation.org/packages/leaflet/versions/2.2.2/topics/addRasterImage).
+[`addRasterImage()`](https://rstudio.github.io/leaflet/reference/addRasterImage.html).
 The function accepts both `SpatRaster` and `RasterLayer` (from the old
 `raster` package) objects. The `layerId` is a unique identifier for a
 specific layer. The `group` allows interaction with other map elements
-(added below).
+(added below). The opacity is set to `0.6` to allow visibility of
+features in the base map (i.e., underneath the raster).
 
 ```{r, echo=TRUE, warnings=FALSE}
 leaflet(options = leafletOptions(minZoom = 3.5)) %>% 
@@ -246,9 +244,76 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
   addRasterImage(lilacModel_r, 
                  project = TRUE, 
                  colors = palRast,
+                 opacity = 0.6,
                  layerId = "Predicted",
                  group = "Predicted")
 ```
+
+------------------------------------------------------------------------
+
+#### **Practice 1** Explore basemaps
+
+Replace "OpenStreetMap" with three different basemaps. A live visual
+index of every variant available is in the [Leaflet Provider Demo
+Gallery](https://leaflet-extras.github.io/leaflet-providers/preview/).
+
+```{r}
+#| eval: false
+addProviderTiles("CartoDB.Positron")
+addProviderTiles("Esri.WorldImagery")
+addProviderTiles("OpenTopoMap")
+```
+
+Questions:
+
+**Question 1.** Which basemap would work best for displaying the raster
+data? Why?
+
+**Question 2.** How does changing the color and opacity of raster data
+affect base map readability?
+
+------------------------------------------------------------------------
+
+### **Control the starting view**
+
+You can set the view to a particular area of interest using
+[`setView()`](https://www.rdocumentation.org/packages/leaflet/versions/2.2.2/topics/setView).
+Try setting the view for the Pacific Northwest using the argument below.
+
+```{r, echo=TRUE, warnings=FALSE}
+leaflet(options = leafletOptions(minZoom = 3.5)) %>% 
+  setMaxBounds(lng1 = -126, lat1 = 25, lng2 = -66.5, lat2 = 49.5) %>% 
+  setView(lng = -120, lat = 44, zoom = 6) %>% 
+  # Tiles
+  addProviderTiles("OpenStreetMap") %>% 
+  # Add raster (model predictions of leaf out)
+  addRasterImage(lilacModel_r, 
+                 project = TRUE, 
+                 colors = palRast,
+                 opacity = 0.6,
+                 layerId = "Predicted",
+                 group = "Predicted")
+```
+
+------------------------------------------------------------------------
+
+#### **Practice 2** Control the starting view
+
+Center the map on your home state and zoom in.
+
+```{r}
+
+```
+
+Questions:
+
+**Question 3.** What happens when you increase the zoom level?
+
+**Question 4.** What happens when you remove `setMaxBounds()`?
+
+------------------------------------------------------------------------
+
+### **Image query**
 
 The
 [`addImageQuery()`](https://rdrr.io/github/r-spatial/leafem/man/addImageQuery.html)
@@ -265,6 +330,7 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
   addRasterImage(lilacModel_r, 
                  project = TRUE, 
                  colors = palRast,
+                 opacity = 0.6,
                  group = "Predicted",
                  layerId = "Predicted") %>% 
   # Raster query tool
@@ -273,6 +339,28 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
                 group = "Predicted",
                 layerId = "Predicted")
 ```
+
+------------------------------------------------------------------------
+
+#### **Practice 3** Investigate the raster
+
+Use the query tool to identify some of the earliest and latest predicted
+leaf-out dates.
+
+```{r}
+
+```
+
+Questions:
+
+**Question 5.** Where are the earliest vs latest predictions located?
+
+**Question 6.** Do you have ideas about how to display calendar date
+units?
+
+------------------------------------------------------------------------
+
+### **Add boundary features**
 
 Next, we can add our vector data (`sf` objects), including the states
 feature and the points where lilac leaf out was observed. The
@@ -292,6 +380,7 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
   addRasterImage(lilacModel_r, 
                  project = TRUE, 
                  colors = palRast,
+                 opacity = 0.6,
                  group = "Predicted", 
                  layerId = "Predicted") %>%
   # Raster query tool
@@ -306,7 +395,9 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
                weight = 1.25) %>%
   # Add points (observations of leaf out)
   addCircleMarkers(
-    data = lilacObs_sf,               
+    data = lilacObs_sf,
+    group = "Observed",
+    popup = ~paste("Leaf-out month:", leaf_month),
     color = "black",
     fillColor = ~palPts(leaf_month),
     fillOpacity = 1,
@@ -314,12 +405,37 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
     weight = 0.5) 
 ```
 
-The map isn't very informative without a legend. The
-[`addLegend()`](https://rstudio.github.io/leaflet/reference/addLegend.html)
-function `leaflet` can solve this problem. The
-[`addLeafLegends`](https://rdrr.io/cran/leaflegend/man/addLeafLegends.html)
-package has additional functions for customizing legends. The raster and
-point data have the same color scale, so only a single legend is needed.
+------------------------------------------------------------------------
+
+#### **Practice 4** Conditional layers
+
+Let's say you want to show a specific layer at certain zoom levels. For
+example, someone may want to see county boundaries when they zoom in to
+the state level. This can be accomplished using `groupOptions()` and the
+`zoomLevels` argument.
+
+Import the county boundary data (`counties.shp`) and crop it to the same
+extent as the raster. Name the object `counties`.
+
+```{r, echo=TRUE, warnings=FALSE}
+# US counties feature
+counties <- st_read(here("data", "counties.shp"))
+
+# Crop to same extent as raster and project 
+counties <- counties %>% 
+  st_crop(., ext(lilacModel_r))
+```
+
+You can make the counties layer conditional using the following
+argument:
+
+```{r, echo=TRUE}
+#| eval: false
+groupOptions("Counties", zoomLevels = 6:18)
+```
+
+Now add the counties layer to your map and use the above conditional
+command.
 
 ```{r, echo=TRUE, warnings=FALSE}
 leaflet(options = leafletOptions(minZoom = 3.5)) %>% 
@@ -330,6 +446,7 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
   addRasterImage(lilacModel_r, 
                  project = TRUE, 
                  colors = palRast,
+                 opacity = 0.6,
                  group = "Predicted", 
                  layerId = "Predicted") %>%
   # Raster query tool
@@ -342,31 +459,107 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
                opacity = 0.25, 
                color = "black", 
                weight = 1.25) %>%
+    # Add counties (conditional on zoom level)
+  addPolylines(data = counties, 
+               opacity = 0.25, 
+               color = "black", 
+               weight = 0.75, 
+               group = "Counties") %>%
+  # Constrain the group to only show between zoom levels 12 and 18
+  groupOptions("Counties", zoomLevels = 6:18) %>% 
   # Add points (observations of leaf out)
   addCircleMarkers(
-    data = lilacObs_sf,               
+    data = lilacObs_sf,
+    group = "Observed",
+    popup = ~paste("Leaf-out month:", leaf_month),
     color = "black",
     fillColor = ~palPts(leaf_month),
     fillOpacity = 1,
     radius = 3,
-    weight = 0.5) %>% 
-  # Add legend
-  addLegend(
-    data = lilacObs_sf,
-    pal = palPts,
-    values = ~leaf_month,
-    position = "bottomleft",
-    title = "Month",
-    opacity = 0.9
-  ) 
+    weight = 0.5) 
 ```
 
-The map looks pretty good now, but what about a title? This would make
-it even more informative. Below are some HTML tags, which are building
-blocks that define the structure and content of a webpage. The style
-element (`tags$style`) tell `leaflet` exactly how the title should be
-displayed, including its placement on the map, size, padding, colors,
-etc. The
+------------------------------------------------------------------------
+
+#### **Practice 5** Customize boundaries and points
+
+Experiment with different state boundary styles and point symbols. Hint:
+check out the full range of options for graphic elements and layers in
+the reference for
+[`map-layers`](https://rstudio.github.io/leaflet/reference/map-layers.html).
+
+```{r}
+
+```
+
+Questions:
+
+**Question 7.** Which settings make boundaries and points easiest to
+see? Conversely, When might thick boundaries be distracting?
+
+Try adding a popup displaying the observation month to
+`addCircleMarkers`.
+
+```{r, echo=TRUE}
+#| eval: false
+popup = ~paste("Leaf-out month:", leaf_month)
+```
+
+**Question 8.** Zoom into a location with a large difference between
+predicted and observed leaf out. Do you think this is observer or model
+error?
+
+------------------------------------------------------------------------
+
+#### **Practice 6** Add layer controls
+
+Create a control panel that allows users to turn layers on and off.
+Below I added code for the model prediction (raster) layer.
+
+```{r, echo = TRUE}
+#| eval: false
+addLayersControl(
+  overlayGroups = c("Predicted", "Observed"),
+  options = layersControlOptions(collapsed = FALSE)
+)
+```
+
+Questions:
+
+**Question 9.** Can you figure out how to add layer controls for the
+other spatial features?
+
+------------------------------------------------------------------------
+
+### **Add a legend**
+
+The map isn't very informative without a legend. The
+[`addLegend()`](https://rstudio.github.io/leaflet/reference/addLegend.html)
+function `leaflet` can solve this problem. The
+[`addLeafLegends`](https://rdrr.io/cran/leaflegend/man/addLeafLegends.html)
+package has additional functions for customizing legends. The raster and
+point data have the same color scale, so only a single legend is needed.
+
+```{r, echo=TRUE}
+#| eval: false
+# Add legend
+addLegend(
+  data = lilacObs_sf,
+  pal = palPts,
+  values = ~leaf_month,
+  position = "bottomleft",
+  title = "Month",
+  opacity = 0.9
+) 
+```
+
+### **Add a title**
+
+The map looks pretty good now, but what about a title? Below are some
+HTML tags, which are building blocks that define the structure and
+content of a webpage. The style element (`tags$style`) tell `leaflet`
+exactly how the title should be displayed, including its placement on
+the map, size, padding, colors, etc. The
 
 <div>
 
@@ -396,14 +589,39 @@ title <- tags$div(
 )
 ```
 
-Below is the entire block of code, including the use of `addControl()`
-to insert the title. Additionally, the
-[`addMouseCoordinates()`](https://www.rdocumentation.org/packages/mapview/versions/2.5.0/topics/addMouseCoordinates)
-function is used to display the coordinates as you move the cursor over
-the map.
+You can add the title using the code below.
+
+```{r, echo=TRUE}
+#| eval: false
+# Map title
+addControl(title, 
+           position = "topright", 
+           className = "map-title") 
+```
+
+------------------------------------------------------------------------
+
+#### **Practice 8** Wrap-up
+
+There are numerous other great map features in `leaflet`. Try adding the
+features below.
+
+**1.** Display the coordinates as you move the cursor over the map using
+`addMouseCoordinates()`.
+
+**2.** Add a scale bar using `addScaleBar()`.
+
+**3.** Add a mini map using `addMiniMap()`.
+
+------------------------------------------------------------------------
+
+Add your final leaflet map code below to produce a beautiful map!
 
 ```{r, echo=TRUE, warnings=FALSE}
 leaflet(options = leafletOptions(minZoom = 3.5)) %>% 
+  addLayersControl(
+  overlayGroups = c("Predicted", "Observed"),
+  options = layersControlOptions(collapsed = FALSE)) %>% 
   setMaxBounds(lng1 = -126, lat1 = 25, lng2 = -66.5, lat2 = 49.5) %>% 
   # Tiles
   addProviderTiles("OpenStreetMap") %>%
@@ -411,6 +629,7 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
   addRasterImage(lilacModel_r, 
                  project = TRUE, 
                  colors = palRast,
+                 opacity = 0.6,
                  group = "Predicted", 
                  layerId = "Predicted") %>%
   # Raster query tool
@@ -423,9 +642,18 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
                opacity = 0.25, 
                color = "black", 
                weight = 1.25) %>%
+  # Add counties (conditional on zoom level)
+  addPolylines(data = counties, 
+               opacity = 0.25, 
+               color = "black", 
+               weight = 0.75, 
+               group = "Counties") %>%
+  # Constrain the group to only show between zoom levels 12 and 18
+  groupOptions("Counties", zoomLevels = 6:18) %>% 
   # Add points (observations of leaf out)
   addCircleMarkers(
-    data = lilacObs_sf,               
+    data = lilacObs_sf,
+    group = "Observed",
     color = "black",
     fillColor = ~palPts(leaf_month),
     fillOpacity = 1,
@@ -445,19 +673,30 @@ leaflet(options = leafletOptions(minZoom = 3.5)) %>%
              position = "topright", 
              className = "map-title") %>% 
   # Shows map coordinates as mouse is moved over map
-  addMouseCoordinates
-```
-
-**Practice.** Try making some edits to change the map's appearance. For
-example, you could make the raster semi-transparent to see the open
-street map, change fonts and colors, change the max map bounds, change
-the marker type for points, or something else!
-
-```{r}
-
+  addMouseCoordinates() %>% 
+  # Shows scale bar
+  addScaleBar() %>% 
+  # Shows mini map
+  addMiniMap()
 ```
 
 ------------------------------------------------------------------------
+
+## **Wrap up**
+
+The "Introduction to GIS and Mapping in R" workshop focused on making
+static maps using `ggplot2`. Now that you've completed this exercise,
+consider the questions below.
+
+**Question 10.** What information is easier to explore with an
+interactive map?
+
+**Question 11.** What information is easier to communicate with a static
+map?
+
+**Question 12.** When would you choose `ggplot2` instead of `leaflet`?
+
+**Question 13.** When would you choose `leaflet` instead of `ggplot2`?
 
 ## **Potentially useful resources about `leaflet`**
 
@@ -491,7 +730,7 @@ by J. Tran (2018)\
 
 ## **Acknowledgements**
 
-This work was funded by the USDA National Institute of Food and
+This work was supported by the USDA National Institute of Food and
 Agriculture (NIFA) Agriculture and Food Research Initiative program
 (grant no. 2022-68013-37138) and USDA NIFA Crop and Pest Management
 (CPPM) program (grant no. 2024-70006-43503).

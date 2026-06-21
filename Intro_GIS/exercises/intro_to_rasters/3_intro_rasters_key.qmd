@@ -13,9 +13,12 @@ format:
 execute:
   enabled: true
   echo: false
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
-## __Load packages__
+## **Load packages**
 
 ```{r, warning = FALSE, message = FALSE, echo=TRUE}
 library(here) # Easier relative paths
@@ -34,14 +37,14 @@ library(tidyterra) # Tidyverse function for SpatRaster objects
 #devtools::install_github("ropensci/USAboundaries")
 ```
 
-## __Overview__
+## **Overview**
 
 Combine the [`terra`](https://rspatial.org/pkg/index.html),
 [`sf`](https://r-spatial.github.io/sf/), and
 [`ggplot2`](https://ggplot2.tidyverse.org/) packages to work with
 geospatial data and create beautiful maps.
 
-### __Learning objectives__
+### **Learning objectives**
 
 -   Plot and analyze spatial data to address a research question
 -   Apply different mapping functions in `terra`, `sf`, and `ggplot2`
@@ -50,7 +53,7 @@ geospatial data and create beautiful maps.
     mapping
 -   Adjust `ggplot2` settings to customize maps
 
-## __Mapping predicted vs. observed dates of lilac phenophases__
+## **Mapping predicted vs. observed dates of lilac phenophases**
 
 ```{r, echo=FALSE}
 knitr::include_graphics(here("images", "NPN_phenophase.jpg"))
@@ -67,9 +70,9 @@ organization that hosts phenology models and maintains a database of
 volunteer-contributed observations of phenology for ecologically and
 economically important species of plants and insects in the USA.
 
-------------------------------------
+------------------------------------------------------------------------
 
-## __Exercise 1: Mapping predicted lilac leaf out__
+## **Exercise 1: Mapping predicted lilac leaf out**
 
 We import raster data for model predictions of lilac leaf out for 2018
 using the `rast()` function in `terra`.
@@ -89,7 +92,7 @@ lilacModel_r
 
 We'll go over three approaches for mapping this raster.
 
-#### __(1a) terra: `plot()`__
+#### **(1a) terra: `plot()`**
 
 The raster can be visualized using the [`plot()` function in
 `terra`](https://rspatial.github.io/terra/reference/plot.html). This
@@ -135,16 +138,15 @@ lilacModel_r2 <- classify(lilacModel_r, classes)
 plot(lilacModel_r2, type="classes", col = rev(viridis::viridis(length(classes))))
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-__Question 1.__ How does predicted lilac leaf out vary
-across the contiguous U.S. (CONUS)? Any ideas what may explain these
-patterns?
+**Question 1.** How does predicted lilac leaf out vary across the
+contiguous U.S. (CONUS)? Any ideas what may explain these patterns?
 
 Answer: Leaf out occurs earlier in southern latitudes because warmer
 temperatures there drive faster development.
 
-------------------------------------
+------------------------------------------------------------------------
 
 The `plot()` function has several other options for customizing maps.
 Below, I added a title, put axis labels on 3 sides.
@@ -157,7 +159,7 @@ plot(lilacModel_r,
      plg=list(title="Predicted\nLeafout DOY", cex=0.9), pax=list(side=1:3))
 ```
 
-#### __(1b) Plotting rasters in ggplot2__
+#### **(1b) Plotting rasters in ggplot2**
 
 Most people are more familiar with tidyverse packages and functions than
 those in `terra` or its predecessor `raster`. Thus, mapping rasters with
@@ -170,7 +172,7 @@ examples, days of the year will be binned into months to facilitate
 comparisons with observed lilac leaf out dates (Exercise 2, below). This
 task requires defining a factor variable, as described below.
 
-#### __ggplot2: `geom_raster()`__
+#### **ggplot2: `geom_raster()`**
 
 First, convert the raster into a data frame using `as.data.frame()` in
 `terra.` Set the `xy` option to `TRUE` to retain coordinate information
@@ -283,23 +285,23 @@ ggplot() +
   my_theme # Our custom theme
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-__Challenge 1.__ Change at least two plot features to
-align with your preferences. For example, you could remove the plot axes
-(lat and long), change the legend attributes, font types and sizes, etc.
-(`my_theme`), or change the color palette (`pal`).
+**Challenge 1.** Change at least two plot features to align with your
+preferences. For example, you could remove the plot axes (lat and long),
+change the legend attributes, font types and sizes, etc. (`my_theme`),
+or change the color palette (`pal`).
 
 ```{r, echo=TRUE, warnings=FALSE}
 
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
 FYI: The [`ggsn`](https://oswaldosantos.github.io/ggsn/) package has
 functions to add a scale bar and north arrow. Check it out sometime!
 
-#### __Adding boundary data to maps__
+#### **Adding boundary data to maps**
 
 The map is more informative if we add state boundaries. Some R packages
 provide these data, including
@@ -309,7 +311,9 @@ installing them can sometimes be problematic. To avoid troubleshooting,
 I saved USA boundary data as shapefiles. First, we need to use
 `st_use_s2(FALSE)` because `sf` assumes the world is round, and uses
 great circles for straight lines. This will cause issues for cropping
-boundaries to the same extent as our raster data. See [here](https://r.geocompx.org/reproj-geo-data) for more information about the S2 spherical geometry engine. 
+boundaries to the same extent as our raster data. See
+[here](https://r.geocompx.org/reproj-geo-data) for more information
+about the S2 spherical geometry engine.
 
 ```{r, echo=TRUE, warnings=FALSE}
 sf_use_s2(FALSE)
@@ -325,11 +329,10 @@ states <- st_read(here("data", "states.shp"))
 plot(states[1])
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-__Question 2.__ What is the class and geometry type of
-`states`? Describe two other differences between `states` and
-`lilacModel_r`.
+**Question 2.** What is the class and geometry type of `states`?
+Describe two other differences between `states` and `lilacModel_r`.
 
 Answer: the class is both `sf` and `data.frame`. The `sf` portion
 contains geographic information such as geometry, extent, and CRS,
@@ -340,7 +343,7 @@ CONUS, whereas the sf data are a vector of state boundaries. The two
 datasets are similar in that they have a CRS, a geographic extent, and
 spatial information.
 
-------------------------------------
+------------------------------------------------------------------------
 
 We're going to run into issues due to differing coordinate reference
 systems (CRS) of `states` and `lilacModel_r`. You can see these
@@ -380,18 +383,18 @@ states_c <- st_crop(states, lilacModel_r)
 plot(states_c[1])
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-__Challenge 2.__ Can you think of a `dplyr` approach
-to obtaining data only for CONUS? Hint: remove rows with undesired
-states (note that Puerto Rico \[PR\] is in the data).
+**Challenge 2.** Can you think of a `dplyr` approach to obtaining data
+only for CONUS? Hint: remove rows with undesired states (note that
+Puerto Rico \[PR\] is in the data).
 
 ```{r, echo=TRUE, warnings=FALSE}
 states_c2 <- filter(states, !stusps %in% c("AK", "HI", "PR"))
 plot(states_c2[1])
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
 Finally, use `geom_sf()` to add an `sf` object to a plot - i.e., the
 states feature.
@@ -406,15 +409,15 @@ ggplot() +
   my_theme
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-__Question 3.__ What happens when you don't enter `NA`
-for the fill option for the `states_c` feature? Why?
+**Question 3.** What happens when you don't enter `NA` for the fill
+option for the `states_c` feature? Why?
 
 Answer: the states features covers up the raster data because it's
 multi-polygon data. The default fill color is gray.
 
-------------------------------------
+------------------------------------------------------------------------
 
 You could just continue to use fill = `NA`, or convert the geometry of
 `states_c` to `MULTILINESTRING` using the `st_cast()` function.
@@ -440,7 +443,7 @@ ggplot() +
   my_theme
 ```
 
-#### __ggplot2: `geom_raster()`__
+#### **ggplot2: `geom_raster()`**
 
 An identical map can be produced using the `geom_spatraster()` function
 in `tidyterra`, which works directly with `SpatRaster` objects. First,
@@ -493,9 +496,9 @@ ggsave(conus_mod, filename = here("plots", "Lilac_leaf_out_model_2018.png"),
        dpi = 300, units = c('in'), width = 10, height = 6)
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-## __Exercise 2: Adding phenometric data to the map__
+## **Exercise 2: Adding phenometric data to the map**
 
 We can add more layers to our map to ask certain questions, such as: How
 do model-predicted dates of lilac leaf out compared with observed dates?
@@ -554,8 +557,8 @@ lilacObs_sf <- lilacObs_df %>%
 ```
 
 We'll save the file for use in the next exercise. The extension `.shp`
-makes it save as an ESRI Shapefile. Note: GDAL requires that column names
-are \<=10 characters long.
+makes it save as an ESRI Shapefile. Note: GDAL requires that column
+names are \<=10 characters long.
 
 ```{r, echo=TRUE, warnings=FALSE}
 # Shorten names
@@ -575,22 +578,21 @@ lilacObs_sf$geometry
 states$geometry
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-__Question 4.__ How does the geometry of the lilac
-observations (`lilacObs_sf`) differ from the states feature? Why?
+**Question 4.** How does the geometry of the lilac observations
+(`lilacObs_sf`) differ from the states feature? Why?
 
 Answer: the lilac observations have a POINT geometry whereas the states
 data have a MULTIPOLYGON geometry. Observations are from single
 locations, whereas state boundaries cover many points over the U.S.
 
-------------------------------------
+------------------------------------------------------------------------
 
 Now let's add the phenometric data so we can visualize spatial
 concordance between model-predicted and observed dates for first leaf
 out. Sites for each observation are plotted using their coordinate
-information and colored according to values in the `leaf_date`
-column.
+information and colored according to values in the `leaf_date` column.
 
 ```{r, fig.height = 5, fig.width=9.5}
 # Add sites to the map
@@ -621,11 +623,11 @@ ggsave(conus_modVobs,
        dpi = 300, units = c('in'), width = 10, height = 6)
 ```
 
-------------------------------------
+------------------------------------------------------------------------
 
-__Question 5.__ What does your map tell you about
-predicted vs. observed first leaf out in lilac? Can you think of a
-better way to compare the two datasets on a map?
+**Question 5.** What does your map tell you about predicted vs. observed
+first leaf out in lilac? Can you think of a better way to compare the
+two datasets on a map?
 
 Answer: Our map indicates that predicted dates of lilac leaf out in 2018
 did not always correspond to observed dates. In some cases, the model
@@ -635,9 +637,9 @@ were much later than predicted dates. In this case, perhaps the
 volunteers failed to notice that lilac leaf out had already occurred,
 although other explanations are possible.
 
-------------------------------------
+------------------------------------------------------------------------
 
-#### __Combining different maps__
+#### **Combining different maps**
 
 Let's say we're interested in results for a particular region of CONUS,
 such as a state. The map can be zoomed with the `coord_sf()` function,
@@ -645,7 +647,7 @@ in which the x- and y-limits of the region are defined. In the commented
 `coord_sf()` function below, enter your own limits (xmin, xmax, ymin,
 ymax), but make sure they're within the U.S.
 
-```{r, echo=TRUE, warnings=FALSE}
+```{r, Inteecho=TRUE, warnings=FALSE}
 # Define your limits
 # Min must go before max (e.g., -180, 180)
 xcoords <- c(-90.5542, -82.3047)
@@ -719,8 +721,7 @@ Note: Other options for combining plots include functions in the
 [`cowplot`](https://cran.r-project.org/web/packages/cowplot/vignettes/introduction.html)
 \[`plot_grid()`\] packages.
 
-
-## __Wrap-up__
+## **Wrap-up**
 
 These exercises only scratched the surface of mapping in R! Here's a
 summary:
@@ -744,9 +745,9 @@ summary:
     -   `geom_stars()`: uses the `stars` package, which was not covered
         here
 
-------------------------------------
+------------------------------------------------------------------------
 
-## __Potentially useful tutorials, free books, etc.__
+## **Potentially useful tutorials, free books, etc.**
 
 **Compilation of various resources**\
 - [R Spatial data science blogs](https://r-spatial.org/)
@@ -754,41 +755,52 @@ summary:
 **Books**\
 - [Using R as a GIS](https://locatepress.com/book/rgis) by N. Bearman
 (2025)\
-- [A Crash Course in GIS using R](https://bookdown.org/michael_bcalles/gis-crash-course-in-r/) by M.
+- [A Crash Course in GIS using
+R](https://bookdown.org/michael_bcalles/gis-crash-course-in-r/) by M.
 Branion-Calles (2021)\
-- [An Introduction to R for Spatial Analysis and Mapping](https://collegepublishing.sagepub.com/products/an-introduction-to-r-for-spatial-analysis-and-mapping-3-288946)
+- [An Introduction to R for Spatial Analysis and
+Mapping](https://collegepublishing.sagepub.com/products/an-introduction-to-r-for-spatial-analysis-and-mapping-3-288946)
 by C. Brunsdon and L. Comber (2025)\
 - [Geocomputation with R](https://r.geocompx.org/) by R. Lovelace et al.
 (2025)\
-- [Data Analysis and Visualization with R: Spatial](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/) by S. Sun
+- [Data Analysis and Visualization with R:
+Spatial](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/) by S. Sun
 (2025)\
-- [Geographic Data Science with R](https://bookdown.org/mcwimberly/gdswr-book/) by M.C. Wimberly (2023)\
-- [Maps, R Not the Best Practices](https://bookdown.org/voevodin_nv/R_Not_the_Best_Practices/maps.html) by N. Voevodin (2020)\
-
+- [Geographic Data Science with
+R](https://bookdown.org/mcwimberly/gdswr-book/) by M.C. Wimberly (2023)\
+- [Maps, R Not the Best
+Practices](https://bookdown.org/voevodin_nv/R_Not_the_Best_Practices/maps.html)
+by N. Voevodin (2020)\
 
 **Tutorials/vignettes**\
 - [Spatial Data Science with R and "terra"](https://rspatial.org/) by R.
 Hijmans (2019-2025)\
-- [Geospatial Data Science in R](https://zia207.github.io/geospatial-r-github.io/) by Zia Ahmed\
-- [Introduction to GIS with R](https://www.jessesadler.com/post/gis-with-r-intro/) by Jesse Sadler
+- [Geospatial Data Science in
+R](https://zia207.github.io/geospatial-r-github.io/) by Zia Ahmed\
+- [Introduction to GIS with
+R](https://www.jessesadler.com/post/gis-with-r-intro/) by Jesse Sadler
 (2018)\
-- [GIS and Spatial Analysis with R](https://mgimond.github.io/MEGUG2016/Tutorial.html) by Manny Gimmond
+- [GIS and Spatial Analysis with
+R](https://mgimond.github.io/MEGUG2016/Tutorial.html) by Manny Gimmond
 (2016)\
 - [Links to vignettes and other
 resources](https://r-spatial.github.io/sf/) for "sf"\
-- [R as GIS for Economists](https://tmieno2.github.io/R-as-GIS-for-Economists/) by Taro
+- [R as GIS for
+Economists](https://tmieno2.github.io/R-as-GIS-for-Economists/) by Taro
 Mieno (2024)\
 - [Geospatial workskop](https://datacarpentry.org/lessons/#geospatial)
 by NEON\
-- [Introduction to Spatial Raster Data Using the terra Package](https://rpubs.com/GeospatialEcologist/SpatialRaster) by J. Carrell (2023)\
+- [Introduction to Spatial Raster Data Using the terra
+Package](https://rpubs.com/GeospatialEcologist/SpatialRaster) by J.
+Carrell (2023)\
 
-## __Acknowledgements__
+## **Acknowledgements**
 
 Parts of these exercises were modified from a tutorial for the
 [`rnpn`](https://cran.r-project.org/web/packages/rnpn/index.html)
 package created by Alyssa Rosemartin. Raster and observation data were
 downloaded from the USA National Phenology Network's servers using
-`rnpn`.Development of this workshop was supported by the USDA National Institute 
-of Food and Agriculture (NIFA) Agriculture and Food Research Initiative program
-(#2022-68013-37138) and USDA NIFA Crop and Pest Management program 
-(#2024-70006-43503).
+`rnpn`.Development of this workshop was supported by the USDA National
+Institute of Food and Agriculture (NIFA) Agriculture and Food Research
+Initiative program (#2022-68013-37138) and USDA NIFA Crop and Pest
+Management program (#2024-70006-43503).
