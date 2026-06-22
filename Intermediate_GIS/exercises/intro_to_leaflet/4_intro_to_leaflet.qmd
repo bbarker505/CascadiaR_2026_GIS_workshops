@@ -119,10 +119,10 @@ place because the data are days of the year (no decimals).
 ```{r, echo=TRUE, warnings=FALSE}
 # Raster data: model predictions for lilac leaf out
 # Use the 'rast()' function to import the raster
-lilacModel_r <- rast(here("data", "lilac_2018_model.tiff"))
+# lilacModel_r 
 
 # Round values down because these are days of the year 
-lilacModel_r <- round(lilacModel_r, 0)
+
 ```
 
 Next, import phenometric data for observed lilac leaf out dates for 2018
@@ -257,7 +257,6 @@ index of every variant available is in the [Leaflet Provider Demo
 Gallery](https://leaflet-extras.github.io/leaflet-providers/preview/).
 
 ```{r}
-#| eval: false
 addProviderTiles("CartoDB.Positron")
 addProviderTiles("Esri.WorldImagery")
 addProviderTiles("OpenTopoMap")
@@ -389,10 +388,6 @@ the state level. This can be accomplished using `groupOptions()` and the
 Import the county boundary data (`counties.shp`) and crop it to the same
 extent as the raster. Name the object `counties`.
 
-counties \<- counties %\>%
-
-st_crop(., ext(lilacModel_r))
-
 ```{r, echo=TRUE, warnings=FALSE}
 # US counties feature
 
@@ -403,8 +398,7 @@ You can make the counties layer conditional using the following
 argument:
 
 ```{r, echo=TRUE}
-#| eval: false
-groupOptions("Counties", zoomLevels = 6:18)
+# groupOptions("Counties", zoomLevels = 6:18)
 ```
 
 Now add the counties layer to your map and use the above conditional

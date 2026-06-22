@@ -51,15 +51,15 @@ functions.
 
 ## **Introduction**
 
-The `terra` package is powerful and efficient at analyzing raster and
-vector spatial data. It provides tools for importing, manipulating,
-visualizing, and exporting large geospatial datasets while optimizing
-memory usage and computational performance. For raster analysis, `terra`
-supports common operations such as extraction, cropping, masking,
-resampling, reclassification, focal (neighborhood) analyses, terrain
-calculations, and raster algebra. This exercise will focus on using
-built-in `terra` functions as well as custom function for analyzing
-raster data.
+The [`terra` package](https://rspatial.r-universe.dev/terra) is powerful
+and efficient at analyzing raster and vector spatial data. It provides
+tools for importing, manipulating, visualizing, and exporting large
+geospatial datasets while optimizing memory usage and computational
+performance. For raster analysis, `terra` supports common operations
+such as extraction, cropping, masking, resampling, reclassification,
+focal (neighborhood) analyses, terrain calculations, and raster algebra.
+This exercise will focus on using built-in `terra` functions as well as
+custom function for analyzing raster data.
 
 ## **Exercise 1: Extract and analyze raster data**
 
@@ -243,10 +243,6 @@ Use `lapply` to apply the function across `1:length(July_fls)`.
 **Question 1.** Which OR county had the largest difference (anomaly) in
 temperature (F) from the 30-year average for July?
 
-The output shows which 5 OR counties had the largest difference
-(anomaly) in temperature (F) from the 30 year average for July. The
-largest anomalies are for `2021`, a year with record-breaking heat for
-Oregon.
 
 #### **Practice 1** Modify the raster function
 
