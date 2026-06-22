@@ -764,8 +764,7 @@ by C. Brunsdon and L. Comber (2025)\
 - [Geocomputation with R](https://r.geocompx.org/) by R. Lovelace et al.
 (2025)\
 - [Data Analysis and Visualization with R:
-Spatial](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/) by S. Sun
-(2025)\
+Spatial](https://sunsp.net/rspatial_book/) by S. Sun (2025)\
 - [Geographic Data Science with
 R](https://bookdown.org/mcwimberly/gdswr-book/) by M.C. Wimberly (2023)\
 - [Maps, R Not the Best
