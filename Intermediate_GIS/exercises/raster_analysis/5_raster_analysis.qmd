@@ -1,0 +1,436 @@
+---
+title: "Intermediate GIS and Mapping in R"
+subtitle: "Raster Data Analysis"
+date: today
+author: "Brittany Barker"
+fig-cap-location: top
+format:
+  html:
+    page-layout: full
+    code-fold: show
+    theme: flatly
+    embed-resources: true
+execute:
+  enabled: true
+  echo: false
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{css}
+.figure {
+margin: auto;
+text-align: center;
+}
+```
+
+## **Load packages**
+
+```{r, warning = FALSE, message = FALSE, echo=TRUE}
+library(here) # Project relative paths
+library(dplyr) # Data wrangling
+library(sf) # Working with spatial features
+library(terra) # Working with rasters
+library(ggplot2) # Make a plot
+```
+
+## **Overview**
+
+So far, we have focused on mapping vector and raster data. This exercise
+will focus on conducting raster analyses using built-in and custom
+functions.
+
+## **Learning objectives**
+
+-   Apply functions to rasters\
+-   Write custom functions for raster analyses\
+-   Perform raster time-series analyses\
+-   Extract and summarize raster values by polygons\
+-   Visualize spatial and temporal trends
+
+## **Introduction**
+
+The [`terra` package](https://rspatial.r-universe.dev/terra) is powerful
+and efficient at analyzing raster and vector spatial data. It provides
+tools for importing, manipulating, visualizing, and exporting large
+geospatial datasets while optimizing memory usage and computational
+performance. For raster analysis, `terra` supports common operations
+such as extraction, cropping, masking, resampling, reclassification,
+focal (neighborhood) analyses, terrain calculations, and raster algebra.
+This exercise will focus on using built-in `terra` functions as well as
+custom function for analyzing raster data.
+
+## **Exercise 1: Extract and analyze raster data**
+
+Here, we'll use the `extract` function to extract model predictions
+(predicted day of year) from the precise location where lilac
+observations were collected (observed day of year). This allows us to
+further compare the two datasets.
+
+Use code from previous exercises to import the `lilac_2018_model` raster
+(model predictions of leaf out) and the phenometric data for lilac leaf
+out (observed dates of leaf out).
+
+```{r, echo=TRUE, warnings=FALSE}
+# Use the 'rast()' function to import the raster
+# lilacModel_r
+
+# Phenometric data (shapefile produced in previous exercise)
+# lilacObs_sf
+```
+
+The `extract()` function in `terra` extracts predictions from location
+data, including `sf` point files. The first argument is the raster, the
+second the locations.
+
+```{r, echo=TRUE, warnings=FALSE}
+# Extract model predictions for each observation location
+# lilacObs_extr 
+```
+
+Sometimes it's easier to work with the results in a data frame, which
+we'll do below. By default, `terra` names the extracted data as `layer`,
+so we'll make the column name more informative (`leaf_doy`).
+
+```{r, echo=TRUE}
+lilacObs_extr <- lilacObs_extr %>%
+  as.data.frame() %>%
+  rename("leaf_doy" = "layer")
+```
+
+Next, we can estimate the extent to which the model under-predicts vs.
+over-predicts the date of lilac leaf out by subtracting the `leaf_doy`
+columns.
+
+```{r, echo=TRUE}
+# Differences (in days) between predicted and observed lilac leaf out
+differences <- lilacObs_extr$leaf_doy- lilacObs_sf$leaf_doy
+```
+
+Create a histogram of differences using the `hist()` function in base
+`R.` It might be helpful to define a sequence of breaks (e.g., -250, 0, 25).
+
+```{r, echo=TRUE, warnings=FALSE}
+# Create a histogram
+```
+
+Now calculate some simple summary statistics of the differences.
+
+```{r, echo=TRUE, warnings=FALSE}
+# Mean
+
+# Range
+
+# Median
+
+```
+
+------------------------------------------------------------------------
+
+**Question 1** What information do your simple analyses provide that
+can't be seen on a map? Overall, what do the results say about the
+performance of the model for lilac leaf out?
+
+
+------------------------------------------------------------------------
+
+## **Exercise 2: Apply custom functions to raster data**
+
+Custom functions allow us to:
+
+-   Avoid repeating code
+-   Improve readability
+-   Increase reproducibility
+-   Apply the same workflow to many rasters
+-   Simplify complex analyses
+
+## **(1) Evaluating temperature anomalies**
+
+We'll move on from the lilac modeling data set to climate change.
+Specifically, well ask this question: for each year between 2020 and
+2024, which OR counties experienced the largest July temperature
+anomalies relative to the 30-year average?
+
+### **Data preparation**
+
+We will use three data sets:
+
+1)  Tmax for July for 2020, 2021, 2022, 2023 and 2024 (5 rasters)
+2)  Average Tmax for July between 1981-2010 (1 raster)
+3)  U.S. county simple features (sf) object
+
+Below a list of raster files for July in individual years is created,
+plus the 30-year average file.
+
+```{r}
+# List of files for July
+Jul_fls <- list.files(
+  here("data", "prism_data", "july"),
+  pattern = glob2rx("*202*.tif$*"),
+  full.names = TRUE
+)
+
+# 30-year normals
+Jul_30yrAv_fl <- here("data", "prism_data", "normals", "PRISM_tmax_30yr_normal_4kmM2_07_bil.bil")
+```
+
+Load the July rasters and files and take a look at the data. 
+
+```{r, echo=TRUE}
+# Jul_30yrAv 
+
+
+```
+
+Import the county boundary data (`counties.shp`) and filter out counties
+for OR.
+
+```{r, echo=TRUE, warnings=FALSE}
+# US counties feature
+
+
+# Subset (filter) Oregon counties only
+
+```
+
+### **Function: temperature anomaly by county**
+
+The `top_county_func` function determines which Oregon counties had the
+largest difference in July temperature compared to the 30 year average.
+The `n` argument defines the top number of counties with the largest
+anomaly to return.
+
+```{r}
+top_county_func <- function(i, n = 5) {
+
+  # Import rasters
+  r <- rast(Jul_fls[i])
+  r_avg <- rast(Jul_30yrAv_fl)
+  
+  # Calculate the temperature anomaly in degrees Fahrenheit 
+  anom <- (r * 1.8 + 32) - (r_avg * 1.8 + 32)
+  names(anom) <- "value"
+  
+  # Calculate the anomaly in OR counties
+  county_vals <- extract(anom, countiesOR, fun = mean)
+  #county_vals <- extract(anom, countiesOR, fun = median)
+  
+  # Sort the results and extract the counties with the largest anomalies
+   anom_cnty <- county_vals %>%
+    mutate(
+      county = countiesOR$name,
+      anomaly_F = value
+    ) %>%
+    arrange(desc(abs(anomaly_F))) %>%
+    slice(1:n) %>%
+    select(county, anomaly_F)
+   
+   return(anom_cnty)
+}
+```
+
+### **Apply the function across years**
+
+Use `lapply` to apply the function across `1:length(July_fls)`.
+
+```{r, echo=TRUE, warnings=FALSE}
+# results 
+```
+
+------------------------------------------------------------------------
+
+**Question 1.** Which OR county had the largest difference (anomaly) in
+temperature (F) from the 30-year average for July?
+
+
+#### **Practice 1** Modify the raster function
+
+**1.** Add median, standard deviation, and maximum anomaly values.
+
+**2.** Return counties with the most negative anomalies.
+
+**3.** Modify the function so it returns the top 10 counties instead of 5.
+
+------------------------------------------------------------------------
+
+## **(2) Direction of change in annual Tmax**
+
+How has annual maximum temperature (Tmax) changed across Oregon between
+1990 and 2019?
+
+Load annual data.
+
+```{r, echo=TRUE}
+USA_fls <- list.files(
+  here("data", "prism_data", "annual"),
+  pattern = ".bil$",
+  full.names = TRUE
+)
+```
+
+### **Function: regression model of Tmax**
+
+The `slope_func` function below loads, crops, and subsets annual Tmax
+rasters and then runs a regression model for each raster grid cell. The
+results will provide insight into the direction of change in annual Tmax
+for each decade.
+
+```{r, echo=TRUE}
+slope_func <- function(years) {
+  
+  # Get rasters and crop to OR, and retain layers of corresponding years
+  USA_r <- rast(USA_fls)
+  
+  # Crop the raster data
+  OR_r <- crop(
+    USA_r,
+    ext(-124.7294, -116.2949, 41.7150, 46.4612)
+  )
+  
+  # Subset raster layer for the year range
+  OR_r <- OR_r[[years]]
+  
+  # Run a regression model for each cell of the raster stack
+  rm <- regress(
+    OR_r,
+    1:nlyr(OR_r),
+    na.rm = TRUE
+  )
+   return(rm)
+}
+```
+
+Analyze the trend of annual Tmax for each decade.
+
+```{r, echo=TRUE}
+# Decades
+year_sets <- list(
+  1:10, # 1990-1999
+  11:20, # 2000-2010
+  21:30 # 2011-2020
+)
+```
+
+Apply the function below. Name the output `slopes`
+
+```{r, echo=TRUE}
+# slopes 
+```
+
+Take a look at the trend results. What does each list element correspond
+to?\
+
+```{r, echo=TRUE}
+
+```
+
+For increased clarity, we can rename the list elements. These can be
+used for titles for creating basic plots in `terra`.
+
+```{r, echo=TRUE}
+names(slopes) <- c( "OR_1990_1999",  "OR_2000_2010",  "OR_2011_2020")
+```
+
+Let's look at the results. Annual Tmax exhibited different trends
+throughout OR if we look at each decade separately, but temperatures are
+generally increasing in many areas. The `x` layer in each raster
+corresponds to the slope - i.e., the trend in annual Tmax for the
+respective time periods. We can plot these results by referencing the
+second layer for each list element.
+
+```{r}
+plot(c(slopes[[1]][[2]], slopes[[2]][[2]], slopes[[3]][[2]]),
+     plg=list(title="Slope"), 
+     main = names(slopes))
+```
+
+**Question 2.** Overall, which decade did Tmax increase at the fastest
+rate?
+
+------------------------------------------------------------------------
+
+#### **Practice 2** Modify the trend function
+
+**4.** Change the extent to a different state.
+
+**5.** Change the time frame to a longer period, such as `20` or `30`
+years.
+
+------------------------------------------------------------------------
+
+Visualize the Tmax trends by Oregon county for 2011-2020. Here we
+convert `countiesOR` to a `SpatVector` format, which is designed for
+vector data in the `terra` package. You can save the results as a
+polygon and easily plot the results. By default, the output column name
+is `x`.
+
+```{r, echo=TRUE}
+# Convert the sf feature to a SpatVector
+countiesOR_v <- vect(countiesOR)
+
+# Calculate zonal stats
+slope_zonal <- zonal(slopes[[3]][[2]], countiesOR_v, 
+                     fun = "mean", as.polygons = TRUE)
+
+# Plot
+plot(slope_zonal, y = "x", 
+     plg=list(title="Zonal mean"))
+```
+
+------------------------------------------------------------------------
+
+#### **Practice 3** Make a nicer plot
+
+**6.** Practice your `ggplot2` mapping skills to make a nicer map!
+(Hint: the data is `countiesOR_z` and values are `mean`). A nice
+addition could be a title like "Mean Rate of Tmax Change in Oregon
+(2011-2020)", and you can visualized county names using
+`geom_sf_text()`.
+
+```{r, echo = TRUE}
+# Bind the mean value column to the OR counties feature
+countiesOR_z <- bind_cols(countiesOR, mean = slope_zonal$x)
+
+# Make a ggplot
+
+```
+
+**Question 3.** Which county experienced the largest increase in Tmax
+between 2011-2020?
+
+## **Wrap up**
+
+We focused on using `terra` to extract and analyze raster and vector data. The 
+package is large and extensive, with dozens (or hundreds!) of functions, and an
+ability to do parallel processing to speed up operations. Thus, it's very 
+powerful and an integral to working with rasters in R.
+
+## **Potentially useful tutorials, free books, etc.**
+
+**Compilation of various resources**\
+- [R Spatial data science blogs](https://r-spatial.org/)
+
+**Books**\
+- [Geocomputation with R](https://r.geocompx.org/) by R. Lovelace et al.
+(2025)\
+- [Geographic Data Science with R](https://bookdown.org/mcwimberly/gdswr-book/) by M.C. Wimberly (2023)\
+
+**Tutorials/vignettes**\
+- [Spatial Data Science with R and "terra"](https://rspatial.org/) by R.
+Hijmans (2019-2025)\
+- [Geospatial workskop](https://datacarpentry.org/lessons/#geospatial)
+by NEON\
+- [Introduction to Spatial Raster Data Using the terra
+Package](https://rpubs.com/GeospatialEcologist/SpatialRaster) by J.
+Carrell (2023)\
+- [Introduction to rasters with terra](https://emlab-ucsb.github.io/intro-terra/) by J. Flower\
+- [Intro to GIS in R](https://rpubs.com/hannah0/GIS_with_terra) by H. Owens\
+- [Raster analysis with terra](https://www.wvview.org/os_sa/15_Raster_Analysis_terra.html) by WVview
+
+## **Acknowledgements**
+
+Development of this workshop was supported by the USDA National
+Institute of Food and Agriculture (NIFA) Agriculture and Food Research
+Initiative program (#2022-68013-37138) and USDA NIFA Crop and Pest
+Management program (#2024-70006-43503).
