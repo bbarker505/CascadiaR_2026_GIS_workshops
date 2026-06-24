@@ -186,7 +186,7 @@ lilacObs_sf$leaf_month <- factor(
 ```
 
 In R, `leaflet` uses several
-[`color*()`](https://rstudio.github.io/leaflet/articles/colors.html)
+[`color()`](https://rstudio.github.io/leaflet/articles/colors.html)
 functions to map variables to color. First we need to define the palette
 and then join that information to the `factors_df` data frame so that
 each value (day of year) has a color associated with it.
