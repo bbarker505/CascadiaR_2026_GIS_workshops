@@ -1,8 +1,8 @@
 ---
 title: "Introduction to GIS and mapping in R"
-subtitle: "Cascadia R Conference 2025"
+subtitle: "Cascadia R Conference 2026"
 author: "Brittany Barker"
-date: 6/21/25
+date: 6/26/26
 format: revealjs
 embed-resources: true
 ---
@@ -43,25 +43,6 @@ knitr::include_graphics(here("images", "intro_me.jpg"))
 <br/> **R Community**\
 - Co-organize "Aggregate" meetups\
 - Co-organize Cascadia R Conference
-:::
-:::::
-
-## Your instructors: Carrie Preston
-
-::::: columns
-::: {.column width="40%"}
-```{r, echo = FALSE, out.width = "500px"}
-knitr::include_graphics(here("images", "Carrie2.jpg"))
-```
-:::
-
-::: {.column width="60%"}
-**Current position**\
-- Research Associate, OSU\
-<br/> **Research interests**\
-- Entomology, biological control, insect rearing\
-<br/> **Hobbies**\
-- Photography, dungeons and dragons, gardening, walking her cats\
 :::
 :::::
 
